@@ -1,11 +1,12 @@
 import streamlit as st
 import numpy as np
 import pickle
-import seaborn as sns
+import matplotlib.pyplot as plt  # Import matplotlib for visualization
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.preprocessing import StandardScaler
 
 # Streamlit app title
 st.title("Diabetes Prediction")
@@ -27,11 +28,15 @@ st.write(data.corr())
 x = data.iloc[:, 0:8]
 y = data.iloc[:, -1]
 
-# Split dataset into training and testing sets
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
+# Scale the data
+scaler = StandardScaler()
+x_scaled = scaler.fit_transform(x)
 
-# Create and fit the Logistic Regression model
-lr = LogisticRegression()
+# Split dataset into training and testing sets
+x_train, x_test, y_train, y_test = train_test_split(x_scaled, y, test_size=0.2, random_state=0)
+
+# Create and fit the Logistic Regression model with increased max_iter
+lr = LogisticRegression(max_iter=1000)
 lr.fit(x_train, y_train)
 
 # Save the trained classifier using pickle
@@ -68,4 +73,12 @@ if st.checkbox("Show Classification Report Heatmap"):
     report = classification_report(y_test, y_pred, output_dict=True)
     report_df = pd.DataFrame(report).transpose()
     st.write("Classification Report Heatmap:")
-    sns.heatmap(report_df, annot=True)
+
+    # Create a heatmap using matplotlib
+    plt.figure(figsize=(8, 6))
+    plt.imshow(report_df, cmap="YlGnBu", interpolation="nearest", aspect="auto")
+    plt.colorbar()
+    plt.xticks(np.arange(len(report_df.columns)), report_df.columns, rotation=45)
+    plt.yticks(np.arange(len(report_df.index)), report_df.index)
+    plt.tight_layout()
+    st.pyplot()  # Display the matplotlib plot in Streamlit
